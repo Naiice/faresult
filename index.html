@@ -40,6 +40,20 @@
                     <label class="text-xs text-blue-100 whitespace-nowrap">ถึง:</label>
                     <input type="date" id="endDate" class="rounded px-2 py-1 text-sm text-gray-800 outline-none">
                 </div>
+                
+                <!-- เพิ่ม Checkbox กลุ่มสำหรับเลือกกะ Day/Night -->
+                <div class="flex items-center gap-2">
+                    <label class="text-xs text-blue-100 whitespace-nowrap">กะ:</label>
+                    <div class="flex items-center gap-3 bg-white px-3 py-1 rounded text-sm text-gray-800 shadow-sm">
+                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-blue-600 hover:bg-gray-100 px-1 rounded transition">
+                            <input type="checkbox" value="Day" class="shift-cb w-4 h-4 accent-blue-600" checked> Day
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-indigo-800 hover:bg-gray-100 px-1 rounded transition">
+                            <input type="checkbox" value="Night" class="shift-cb w-4 h-4 accent-indigo-800" checked> Night
+                        </label>
+                    </div>
+                </div>
+
                 <div class="flex items-center gap-2">
                     <label class="text-xs text-blue-100 whitespace-nowrap">ไลน์:</label>
                     <!-- เปลี่ยนจาก Dropdown เป็น Checkbox กลุ่ม -->
@@ -138,6 +152,7 @@
         let rawData = [];
         let filteredData = [];
         let currentSelectedLines = []; // เก็บไลน์ที่ติ๊กเลือก
+        let currentSelectedShifts = []; // เก็บกะที่ติ๊กเลือก
         let productionCharts = {}; // เปลี่ยนจากตัวแปรเดี่ยว เป็น Object เพื่อเก็บกราฟหลายตัว
         let summaryChartInstance = null;
         let currentChartType = 'bar';
@@ -214,12 +229,20 @@
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
             
-            // อ่านค่าจาก Checkbox ที่ถูกติ๊ก
-            const checkboxes = document.querySelectorAll('.line-cb:checked');
-            currentSelectedLines = Array.from(checkboxes).map(cb => cb.value);
+            // อ่านค่าจาก Checkbox ที่ถูกติ๊ก (ไลน์)
+            const lineCheckboxes = document.querySelectorAll('.line-cb:checked');
+            currentSelectedLines = Array.from(lineCheckboxes).map(cb => cb.value);
+
+            // อ่านค่าจาก Checkbox ที่ถูกติ๊ก (กะ)
+            const shiftCheckboxes = document.querySelectorAll('.shift-cb:checked');
+            currentSelectedShifts = Array.from(shiftCheckboxes).map(cb => cb.value);
 
             if (currentSelectedLines.length === 0) {
                 alert("กรุณาเลือกไลน์ผลิตอย่างน้อย 1 ไลน์");
+                return;
+            }
+            if (currentSelectedShifts.length === 0) {
+                alert("กรุณาเลือกกะการผลิตอย่างน้อย 1 กะ (Day/Night)");
                 return;
             }
 
@@ -229,7 +252,8 @@
             filteredData = rawData.filter(row => {
                 let matchDate = row.Date >= startDate && row.Date <= endDate;
                 let matchLine = currentSelectedLines.includes(row.Line);
-                return matchDate && matchLine;
+                let matchShift = currentSelectedShifts.includes(row.Shift); // กรองตามกะด้วย
+                return matchDate && matchLine && matchShift;
             });
 
             updateChart();
