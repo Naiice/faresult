@@ -19,19 +19,19 @@
 </head>
 <body class="bg-gray-800 h-screen w-screen flex items-center justify-center p-2 md:p-4 overflow-hidden box-border">
 
-    <!-- Container ปรับให้พอดีหน้าจอโดยไม่ล้นขอบ (ลบ aspect-[16/9] ออกแล้วใช้ h-full แทน) -->
+    <!-- Container ปรับให้พอดีหน้าจอโดยไม่ล้นขอบ -->
     <div class="w-full h-full max-w-[1920px] bg-gray-100 rounded-xl shadow-2xl flex flex-col overflow-hidden">
         
         <!-- Header & Filters (Compact Row) -->
-        <div class="bg-blue-600 p-3 text-white flex-none flex justify-between items-center shadow-md z-10">
-            <h1 class="text-xl font-bold flex items-center gap-2 m-0">
+        <div class="bg-blue-600 p-3 text-white flex-none flex flex-wrap justify-between items-center shadow-md z-10 gap-2">
+            <h1 class="text-xl font-bold flex items-center gap-2 m-0 whitespace-nowrap">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 Production Dashboard
             </h1>
             
-            <div class="flex items-center gap-3 bg-blue-700 py-1.5 px-4 rounded-lg shadow-inner">
+            <div class="flex flex-wrap items-center gap-3 bg-blue-700 py-1.5 px-4 rounded-lg shadow-inner flex-1 justify-end">
                 <div class="flex items-center gap-2">
                     <label class="text-xs text-blue-100 whitespace-nowrap">เริ่ม:</label>
                     <input type="date" id="startDate" class="rounded px-2 py-1 text-sm text-gray-800 outline-none">
@@ -42,14 +42,24 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <label class="text-xs text-blue-100 whitespace-nowrap">ไลน์:</label>
-                    <select id="lineSelect" class="rounded px-2 py-1 text-sm text-gray-800 outline-none">
-                        <option value="All">ทุกไลน์ (All)</option>
-                        <option value="1#">Line 1#</option>
-                        <option value="2#">Line 2#</option>
-                        <option value="3#">Line 3#</option>
-                        <option value="4#">Line 4#</option>
-                        <option value="5#">Line 5#</option>
-                    </select>
+                    <!-- เปลี่ยนจาก Dropdown เป็น Checkbox กลุ่ม -->
+                    <div class="flex items-center gap-3 bg-white px-3 py-1 rounded text-sm text-gray-800 shadow-sm">
+                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-blue-700 hover:bg-gray-100 px-1 rounded transition">
+                            <input type="checkbox" value="1#" class="line-cb w-4 h-4 accent-blue-600" checked> 1#
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-green-700 hover:bg-gray-100 px-1 rounded transition">
+                            <input type="checkbox" value="2#" class="line-cb w-4 h-4 accent-green-600" checked> 2#
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-purple-700 hover:bg-gray-100 px-1 rounded transition">
+                            <input type="checkbox" value="3#" class="line-cb w-4 h-4 accent-purple-600" checked> 3#
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-orange-700 hover:bg-gray-100 px-1 rounded transition">
+                            <input type="checkbox" value="4#" class="line-cb w-4 h-4 accent-orange-600" checked> 4#
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-red-700 hover:bg-gray-100 px-1 rounded transition">
+                            <input type="checkbox" value="5#" class="line-cb w-4 h-4 accent-red-600" checked> 5#
+                        </label>
+                    </div>
                 </div>
                 <button id="applyFilterBtn" class="bg-white text-blue-700 font-bold py-1 px-4 rounded text-sm hover:bg-blue-50 transition shadow">ค้นหา</button>
             </div>
@@ -95,20 +105,21 @@
                     <!-- Daily Chart (Takes 2/3 width) -->
                     <div class="col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col min-h-0">
                         <div class="flex justify-between items-center mb-2 flex-none">
-                            <h2 class="text-lg font-bold text-gray-700" id="chartTitle">กราฟยอดผลิตรายวัน (Plan vs Actual)</h2>
+                            <h2 class="text-lg font-bold text-gray-700" id="chartTitle">กราฟยอดผลิตรายวัน (แยกตามไลน์)</h2>
                             <div class="flex bg-gray-100 rounded p-1">
                                 <button id="barChartBtn" class="px-3 py-1 rounded bg-white shadow-sm font-semibold text-xs mr-1" onclick="changeChartType('bar')">Bar Chart</button>
                                 <button id="lineChartBtn" class="px-3 py-1 rounded text-gray-500 hover:bg-gray-200 font-semibold text-xs" onclick="changeChartType('line')">Line Chart</button>
                             </div>
                         </div>
-                        <div class="relative flex-1 w-full h-full min-h-0">
-                            <canvas id="productionChart"></canvas>
+                        <!-- เปลี่ยนจาก canvas เดี่ยว เป็น Container รองรับหลายกราฟ -->
+                        <div id="chartsContainer" class="relative flex-1 w-full min-h-0 overflow-y-auto pr-2 flex flex-col gap-4">
+                            <!-- กราฟแต่ละไลน์จะถูกสร้างที่นี่อัตโนมัติ -->
                         </div>
                     </div>
 
                     <!-- Summary Chart (Takes 1/3 width) -->
                     <div class="col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col min-h-0">
-                        <h3 class="text-lg font-bold text-gray-700 mb-2 text-center flex-none">สรุปยอดรวม (Plan, Actual, Rate)</h3>
+                        <h3 class="text-lg font-bold text-gray-700 mb-2 text-center flex-none">สรุปยอดรวม (แยกตามไลน์)</h3>
                         <div class="relative flex-1 w-full h-full min-h-0">
                             <canvas id="summaryChart"></canvas>
                         </div>
@@ -126,14 +137,24 @@
         // --- 2. ตัวแปรเก็บสถานะ ---
         let rawData = [];
         let filteredData = [];
-        let productionChart = null;
-        let summaryChartInstance = null; // ตัวแปรกราฟสรุปในหน้า Summary
-        let currentChartType = 'bar'; // ค่าเริ่มต้นเป็นกราฟแท่ง
+        let currentSelectedLines = []; // เก็บไลน์ที่ติ๊กเลือก
+        let productionCharts = {}; // เปลี่ยนจากตัวแปรเดี่ยว เป็น Object เพื่อเก็บกราฟหลายตัว
+        let summaryChartInstance = null;
+        let currentChartType = 'bar';
         
+        // ชุดสีสำหรับแต่ละไลน์ (Plan อ่อน, Actual เข้ม)
+        const lineColors = {
+            '1#': { plan: 'rgba(59, 130, 246, 0.4)', actual: 'rgba(59, 130, 246, 0.9)', border: 'rgb(37, 99, 235)' }, // Blue
+            '2#': { plan: 'rgba(16, 185, 129, 0.4)', actual: 'rgba(16, 185, 129, 0.9)', border: 'rgb(5, 150, 105)' }, // Green
+            '3#': { plan: 'rgba(168, 85, 247, 0.4)', actual: 'rgba(168, 85, 247, 0.9)', border: 'rgb(147, 51, 234)' }, // Purple
+            '4#': { plan: 'rgba(249, 115, 22, 0.4)',  actual: 'rgba(249, 115, 22, 0.9)',  border: 'rgb(234, 88, 12)' },  // Orange
+            '5#': { plan: 'rgba(239, 68, 68, 0.4)',   actual: 'rgba(239, 68, 68, 0.9)',   border: 'rgb(220, 38, 38)' }   // Red
+        };
+
         // Register Datalabels plugin
         Chart.register(ChartDataLabels);
 
-        // --- 3. ฟังก์ชั่นจำลองข้อมูล (ถ้าไม่ได้ใส่ลิงก์ Google Sheets หรือโหลดไม่สำเร็จ) ---
+        // --- 3. ฟังก์ชั่นจำลองข้อมูล ---
         function generateMockData() {
             const lines = ['1#', '2#', '3#', '4#', '5#'];
             const shifts = ['Day', 'Night'];
@@ -146,15 +167,9 @@
                 
                 lines.forEach(line => {
                     shifts.forEach(shift => {
-                        let plan = Math.floor(Math.random() * 200) + 800;
-                        let actual = Math.floor(Math.random() * 300) + 700;
-                        mock.push({
-                            Date: dateStr,
-                            Line: line,
-                            Shift: shift,
-                            Plan: plan,
-                            Actual: actual
-                        });
+                        let plan = Math.floor(Math.random() * 100) + 400;
+                        let actual = Math.floor(Math.random() * 150) + 350;
+                        mock.push({ Date: dateStr, Line: line, Shift: shift, Plan: plan, Actual: actual });
                     });
                 });
             }
@@ -196,16 +211,24 @@
 
         // --- 5. จัดการข้อมูลตามฟิลเตอร์ ---
         function processData() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            // อ่านค่าจาก Checkbox ที่ถูกติ๊ก
+            const checkboxes = document.querySelectorAll('.line-cb:checked');
+            currentSelectedLines = Array.from(checkboxes).map(cb => cb.value);
+
+            if (currentSelectedLines.length === 0) {
+                alert("กรุณาเลือกไลน์ผลิตอย่างน้อย 1 ไลน์");
+                return;
+            }
+
             document.getElementById('loadingIndicator').classList.add('hidden');
             document.getElementById('dashboardView').classList.remove('hidden');
 
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
-            const lineSelect = document.getElementById('lineSelect').value;
-
             filteredData = rawData.filter(row => {
                 let matchDate = row.Date >= startDate && row.Date <= endDate;
-                let matchLine = lineSelect === "All" || row.Line === lineSelect;
+                let matchLine = currentSelectedLines.includes(row.Line);
                 return matchDate && matchLine;
             });
 
@@ -213,87 +236,116 @@
             updateSummary();
         }
 
-        // --- 6. อัพเดทกราฟรายวัน ---
+        // --- 6. อัพเดทกราฟรายวัน (แยกตามไลน์ ของใครของมัน) ---
         function updateChart() {
-            const ctx = document.getElementById('productionChart').getContext('2d');
+            const container = document.getElementById('chartsContainer');
             
-            const dates = [...new Set(filteredData.map(item => item.Date))].sort();
-            
-            // หาผลรวม Plan และ Actual ในแต่ละวัน (รวม Day/Night หากมี)
-            const dailyPlans = dates.map(date => {
-                return filteredData.filter(d => d.Date === date)
-                                 .reduce((sum, d) => sum + (d.Plan || 0), 0);
-            });
-            
-            const dailyActuals = dates.map(date => {
-                return filteredData.filter(d => d.Date === date)
-                                 .reduce((sum, d) => sum + (d.Actual || 0), 0);
-            });
-
-            if (productionChart) {
-                productionChart.destroy();
+            // ลบกราฟเก่าทั้งหมดทิ้งก่อนสร้างใหม่
+            for (let key in productionCharts) {
+                if(productionCharts[key]) productionCharts[key].destroy();
             }
+            productionCharts = {};
+            container.innerHTML = ''; // เคลียร์ HTML ข้างใน
 
-            productionChart = new Chart(ctx, {
-                type: currentChartType,
-                data: {
-                    labels: dates,
-                    datasets: [
-                        {
-                            label: 'เป้าหมาย (Plan)',
-                            data: dailyPlans,
-                            backgroundColor: 'rgba(59, 130, 246, 0.7)', // Blue
-                            borderColor: 'rgb(37, 99, 235)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: currentChartType === 'line' ? false : true
+            const dates = [...new Set(filteredData.map(item => item.Date))].sort();
+
+            // วนลูปสร้างกราฟตามจำนวนไลน์ที่ถูกเลือก
+            currentSelectedLines.forEach(line => {
+                // 1. สร้าง HTML Container สำหรับแต่ละกราฟ
+                const chartWrapper = document.createElement('div');
+                chartWrapper.className = 'relative w-full flex-1 min-h-[250px] bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col';
+                
+                const title = document.createElement('h3');
+                title.className = 'text-center font-bold text-gray-700 text-sm mb-2 flex-none';
+                title.innerText = `ยอดผลิตรายวัน - ไลน์ ${line}`;
+                
+                const canvasWrapper = document.createElement('div');
+                canvasWrapper.className = 'relative flex-1 w-full min-h-0';
+                
+                const canvas = document.createElement('canvas');
+                
+                canvasWrapper.appendChild(canvas);
+                chartWrapper.appendChild(title);
+                chartWrapper.appendChild(canvasWrapper);
+                container.appendChild(chartWrapper);
+
+                // 2. เตรียมข้อมูลสำหรับไลน์นี้โดยเฉพาะ
+                const colors = lineColors[line] || lineColors['1#'];
+
+                const linePlans = dates.map(date => {
+                    return filteredData.filter(d => d.Date === date && d.Line === line).reduce((sum, d) => sum + (d.Plan || 0), 0);
+                });
+                
+                const lineActuals = dates.map(date => {
+                    return filteredData.filter(d => d.Date === date && d.Line === line).reduce((sum, d) => sum + (d.Actual || 0), 0);
+                });
+
+                // 3. สร้างกราฟ Chart.js
+                const ctx = canvas.getContext('2d');
+                productionCharts[line] = new Chart(ctx, {
+                    type: currentChartType,
+                    data: {
+                        labels: dates,
+                        datasets: [
+                            {
+                                label: `เป้าหมาย (Plan)`,
+                                data: linePlans,
+                                backgroundColor: colors.plan,
+                                borderColor: colors.border,
+                                borderWidth: 1,
+                                borderDash: [3, 3], // เส้นประสำหรับ Plan
+                                tension: 0.3,
+                                fill: currentChartType === 'line' ? false : true
+                            },
+                            {
+                                label: `ผลิตได้จริง (Actual)`,
+                                data: lineActuals,
+                                backgroundColor: colors.actual,
+                                borderColor: colors.border,
+                                borderWidth: 1,
+                                tension: 0.3,
+                                fill: currentChartType === 'line' ? false : true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 12, font: {size: 11} } },
+                            datalabels: {
+                                color: '#333',
+                                anchor: 'end',
+                                align: 'top',
+                                offset: 2,
+                                rotation: -45, // เอียงตัวอักษรกันทับซ้อน
+                                font: { weight: 'bold', size: 9 },
+                                formatter: function(value) {
+                                    return value > 0 ? value.toLocaleString() : '';
+                                }
+                            }
                         },
-                        {
-                            label: 'ผลิตได้จริง (Actual)',
-                            data: dailyActuals,
-                            backgroundColor: 'rgba(16, 185, 129, 0.7)', // Green
-                            borderColor: 'rgb(5, 150, 105)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: currentChartType === 'line' ? false : true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top' },
-                        datalabels: {
-                            color: '#333',
-                            anchor: 'end',
-                            align: 'top',
-                            offset: 4,
-                            font: { weight: 'bold', size: 11 },
-                            formatter: function(value) {
-                                return value > 0 ? value.toLocaleString() : '';
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'จำนวนผลิต (pcs)' },
+                                grace: '15%'
+                            },
+                            x: {
+                                title: { display: true, text: 'วันที่' }
                             }
                         }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: { display: true, text: 'จำนวนผลิต (pcs)' },
-                            grace: '10%'
-                        },
-                        x: {
-                            title: { display: true, text: 'วันที่ (Date)' }
-                        }
                     }
-                }
+                });
             });
         }
 
-        // --- 7. อัพเดทหน้าสรุปยอด (Summary) ---
+        // --- 7. อัพเดทหน้าสรุปยอด (และกราฟสรุปแยกตามไลน์) ---
         function updateSummary() {
             let totalPlan = 0;
             let totalActual = 0;
 
+            // คำนวณสรุปยอดรวมด้านบนสุด
             filteredData.forEach(row => {
                 totalPlan += (row.Plan || 0);
                 totalActual += (row.Actual || 0);
@@ -302,12 +354,10 @@
             let rate = totalPlan > 0 ? ((totalActual / totalPlan) * 100) : 0;
             let rateFormatted = parseFloat(rate.toFixed(1));
 
-            // เปลี่ยนตัวเลขในหน้าจอ
             document.getElementById('sumPlan').innerText = totalPlan.toLocaleString();
             document.getElementById('sumActual').innerText = totalActual.toLocaleString();
             document.getElementById('sumRate').innerText = rateFormatted + '%';
             
-            // อัพเดท Progress Bar
             const rateBar = document.getElementById('rateProgressBar');
             const rateText = document.getElementById('sumRate');
             
@@ -324,7 +374,32 @@
                 rateBar.className = "h-2 rounded-full bg-red-500 transition-all duration-500";
             }
 
-            // --- สร้างกราฟสรุปชุดข้อมูลที่เลือก (Summary Chart) ---
+            // --- สร้างกราฟสรุปข้อมูล แยกตามไลน์ (Summary Chart) ---
+            const summaryLabels = currentSelectedLines.map(line => `Line ${line}`);
+            const summaryPlan = [];
+            const summaryActual = [];
+            const summaryRate = [];
+            const barColorsPlan = [];
+            const barColorsActual = [];
+
+            // คำนวณยอดรวมของแต่ละไลน์
+            currentSelectedLines.forEach(line => {
+                let p = 0;
+                let a = 0;
+                filteredData.filter(d => d.Line === line).forEach(row => {
+                    p += (row.Plan || 0);
+                    a += (row.Actual || 0);
+                });
+                
+                summaryPlan.push(p);
+                summaryActual.push(a);
+                summaryRate.push(p > 0 ? parseFloat(((a/p)*100).toFixed(1)) : 0);
+
+                const colors = lineColors[line] || lineColors['1#'];
+                barColorsPlan.push(colors.plan);
+                barColorsActual.push(colors.actual);
+            });
+
             const summaryCtx = document.getElementById('summaryChart').getContext('2d');
             if (summaryChartInstance) {
                 summaryChartInstance.destroy();
@@ -333,34 +408,34 @@
             summaryChartInstance = new Chart(summaryCtx, {
                 type: 'bar',
                 data: {
-                    labels: ['สรุปยอดตามช่วงเวลาที่เลือก (Selected Period Summary)'],
+                    labels: summaryLabels, // แกน X เป็นชื่อไลน์
                     datasets: [
                         {
-                            label: 'เป้าหมายรวม (Total Plan)',
-                            data: [totalPlan],
-                            backgroundColor: 'rgba(59, 130, 246, 0.8)', // Blue
-                            borderColor: 'rgb(37, 99, 235)',
+                            label: 'เป้าหมายรวม (Plan)',
+                            data: summaryPlan,
+                            backgroundColor: barColorsPlan,
+                            borderColor: barColorsActual,
                             borderWidth: 1,
-                            yAxisID: 'y' // ใช้แกน Y ฝั่งซ้าย
+                            yAxisID: 'y'
                         },
                         {
-                            label: 'ผลิตได้จริง (Total Actual)',
-                            data: [totalActual],
-                            backgroundColor: 'rgba(16, 185, 129, 0.8)', // Green
-                            borderColor: 'rgb(5, 150, 105)',
+                            label: 'ผลิตได้จริง (Actual)',
+                            data: summaryActual,
+                            backgroundColor: barColorsActual,
+                            borderColor: barColorsActual,
                             borderWidth: 1,
-                            yAxisID: 'y' // ใช้แกน Y ฝั่งซ้าย
+                            yAxisID: 'y'
                         },
                         {
                             label: 'ความสำเร็จ (Rate %)',
-                            data: [rateFormatted],
-                            type: 'line', // เป็นเส้นบนกราฟแท่ง
-                            backgroundColor: 'rgba(168, 85, 247, 1)', // Purple
-                            borderColor: 'rgba(168, 85, 247, 1)',
+                            data: summaryRate,
+                            type: 'line',
+                            backgroundColor: 'rgba(75, 85, 99, 1)', // เทาเข้ม
+                            borderColor: 'rgba(75, 85, 99, 1)',
                             borderWidth: 3,
-                            pointRadius: 6,
+                            pointRadius: 5,
                             pointBackgroundColor: '#fff',
-                            yAxisID: 'y1' // ใช้แกน Y ฝั่งขวา
+                            yAxisID: 'y1'
                         }
                     ]
                 },
@@ -368,38 +443,31 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'top' },
+                        legend: { position: 'top', labels: { boxWidth: 12, font: {size: 11} } },
                         datalabels: {
                             color: '#333',
                             anchor: 'end',
                             align: 'top',
-                            offset: 4,
-                            font: { weight: 'bold', size: 14 },
+                            offset: 2,
+                            font: { weight: 'bold', size: 11 },
                             formatter: function(value, context) {
-                                // เช็คว่าถ้าเป็นกราฟเส้น (Rate) ให้เติม %
-                                if (context.dataset.type === 'line') {
-                                    return value + '%';
-                                }
+                                if (context.dataset.type === 'line') return value + '%';
                                 return value > 0 ? value.toLocaleString() : '';
                             }
                         }
                     },
                     scales: {
                         y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: { display: true, text: 'จำนวนรวม (pcs)' },
-                            grace: '10%'
+                            type: 'linear', display: true, position: 'left',
+                            title: { display: true, text: 'จำนวน (pcs)' },
+                            grace: '15%'
                         },
                         y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
+                            type: 'linear', display: true, position: 'right',
                             title: { display: true, text: 'อัตราความสำเร็จ (%)' },
-                            grid: { drawOnChartArea: false }, // ไม่ให้เส้นกริดตีกันกับฝั่งซ้าย
+                            grid: { drawOnChartArea: false },
                             min: 0,
-                            max: Math.max(120, rateFormatted + 20) // เผื่อพื้นที่ให้ตัวเลขด้านบนไม่โดนตัด
+                            max: Math.max(120, Math.max(...summaryRate) + 20)
                         }
                     }
                 }
