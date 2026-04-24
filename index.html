@@ -29,6 +29,11 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 Production Dashboard
+                <!-- Live Indicator (Blinking Green Dot) -->
+                <span class="flex h-3 w-3 relative ml-1" title="Live Auto-Refresh / 实时自动刷新">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
             </h1>
             
             <div class="flex flex-wrap items-center gap-3 bg-blue-700 py-1.5 px-4 rounded-lg shadow-inner flex-1 justify-end">
@@ -156,6 +161,7 @@
         let productionCharts = {}; 
         let summaryChartInstance = null;
         let currentChartType = 'bar';
+        const REFRESH_RATE_MS = 60000; // Refresh data every 60 seconds (60000 ms)
         
         // Color scheme for lines
         const lineColors = {
@@ -191,11 +197,40 @@
             return mock;
         }
 
-        // --- 4. Initialization ---
+        // --- 4. Initialization & Auto-Refresh ---
+        async function fetchAndRefreshData(isInitialLoad = false) {
+            if (isInitialLoad) {
+                document.getElementById('loadingIndicator').classList.remove('hidden');
+                document.getElementById('dashboardView').classList.add('hidden');
+            }
+
+            if (GOOGLE_SHEET_CSV_URL !== "") {
+                // Cache Buster: add current timestamp to URL to bypass browser cache
+                const cacheBusterUrl = GOOGLE_SHEET_CSV_URL + "&_t=" + new Date().getTime();
+                
+                Papa.parse(cacheBusterUrl, {
+                    download: true,
+                    header: true,
+                    dynamicTyping: true,
+                    complete: function(results) {
+                        rawData = results.data.filter(row => row.Date);
+                        processData(); // This will apply current filters and hide loader
+                    },
+                    error: function(err) {
+                        if (isInitialLoad) {
+                            alert("Cannot fetch data from Google Sheets, using mock data instead. / 无法从Google Sheets获取数据，将使用模拟数据。");
+                            rawData = generateMockData();
+                            processData();
+                        }
+                    }
+                });
+            } else {
+                rawData = generateMockData();
+                processData();
+            }
+        }
+
         async function init() {
-            document.getElementById('loadingIndicator').classList.remove('hidden');
-            document.getElementById('dashboardView').classList.add('hidden');
-            
             const today = new Date();
             const lastWeek = new Date();
             lastWeek.setDate(today.getDate() - 6);
@@ -203,25 +238,13 @@
             document.getElementById('endDate').value = today.toISOString().split('T')[0];
             document.getElementById('startDate').value = lastWeek.toISOString().split('T')[0];
 
-            if (GOOGLE_SHEET_CSV_URL !== "") {
-                Papa.parse(GOOGLE_SHEET_CSV_URL, {
-                    download: true,
-                    header: true,
-                    dynamicTyping: true,
-                    complete: function(results) {
-                        rawData = results.data.filter(row => row.Date);
-                        processData();
-                    },
-                    error: function(err) {
-                        alert("Cannot fetch data from Google Sheets, using mock data instead. / 无法从Google Sheets获取数据，将使用模拟数据。");
-                        rawData = generateMockData();
-                        processData();
-                    }
-                });
-            } else {
-                rawData = generateMockData();
-                processData();
-            }
+            // Initial fetch
+            await fetchAndRefreshData(true);
+
+            // Set up background auto-refresh interval
+            setInterval(() => {
+                fetchAndRefreshData(false);
+            }, REFRESH_RATE_MS);
         }
 
         // --- 5. Data Processing & Filtering ---
@@ -244,6 +267,7 @@
                 return;
             }
 
+            // Always ensure dashboard is visible and loader is hidden after processing
             document.getElementById('loadingIndicator').classList.add('hidden');
             document.getElementById('dashboardView').classList.remove('hidden');
 
@@ -326,6 +350,9 @@
                         ]
                     },
                     options: {
+                        animation: {
+                            duration: 800 // smooth transition on auto-refresh
+                        },
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
@@ -455,6 +482,9 @@
                     ]
                 },
                 options: {
+                    animation: {
+                        duration: 800 // smooth transition on auto-refresh
+                    },
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -506,7 +536,9 @@
             updateChart();
         }
 
-        document.getElementById('applyFilterBtn').addEventListener('click', processData);
+        // Event listeners for manual refresh when filters are changed or button is clicked
+        document.getElementById('applyFilterBtn').addEventListener('click', () => fetchAndRefreshData(true));
+        
         window.onload = init;
 
     </script>
