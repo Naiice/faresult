@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Production Dashboard</title>
+    <title>Production & Downtime Dashboard</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -15,6 +15,14 @@
     
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .tab-active { background-color: #ffffff; color: #1d4ed8; border-bottom: 3px solid #3b82f6; }
+        .tab-inactive { background-color: transparent; color: #bfdbfe; border-bottom: 3px solid transparent; }
+        .tab-inactive:hover { color: #ffffff; background-color: rgba(255,255,255,0.1); }
+        /* Custom scrollbar for insights */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
     </style>
 </head>
 <body class="bg-gray-800 h-screen w-screen flex items-center justify-center p-2 md:p-4 overflow-hidden box-border">
@@ -23,20 +31,33 @@
     <div class="w-full h-full max-w-[1920px] bg-gray-100 rounded-xl shadow-2xl flex flex-col overflow-hidden">
         
         <!-- Header & Filters (Compact Row) -->
-        <div class="bg-blue-600 p-3 text-white flex-none flex flex-wrap justify-between items-center shadow-md z-10 gap-2">
-            <h1 class="text-xl font-bold flex items-center gap-2 m-0 whitespace-nowrap">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                Production Dashboard
-                <!-- Live Indicator (Blinking Green Dot) -->
-                <span class="flex h-3 w-3 relative ml-1" title="Live Auto-Refresh / 实时自动刷新">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                </span>
-            </h1>
+        <div class="bg-blue-600 p-2 md:p-3 text-white flex-none flex flex-wrap justify-between items-center shadow-md z-10 gap-2">
             
-            <div class="flex flex-wrap items-center gap-3 bg-blue-700 py-1.5 px-4 rounded-lg shadow-inner flex-1 justify-end">
+            <div class="flex items-center gap-4">
+                <h1 class="text-xl font-bold flex items-center gap-2 m-0 whitespace-nowrap">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Smart Dashboard
+                    <!-- Live Indicator -->
+                    <span class="flex h-3 w-3 relative ml-1" title="Live Auto-Refresh / 实时自动刷新">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </span>
+                </h1>
+                
+                <!-- Main Tabs -->
+                <div class="flex ml-4 gap-1">
+                    <button id="tabBtn-prod" onclick="switchMainTab('prod')" class="tab-active px-4 py-1.5 rounded-t-lg font-bold text-sm transition-all duration-200">
+                        Production / 生产
+                    </button>
+                    <button id="tabBtn-down" onclick="switchMainTab('down')" class="tab-inactive px-4 py-1.5 rounded-t-lg font-bold text-sm transition-all duration-200">
+                        Downtime / 停机
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3 bg-blue-700 py-1 px-4 rounded-lg shadow-inner flex-1 justify-end">
                 <div class="flex items-center gap-2">
                     <label class="text-xs text-blue-100 whitespace-nowrap">Start / 开始:</label>
                     <input type="date" id="startDate" class="rounded px-2 py-1 text-sm text-gray-800 outline-none">
@@ -49,12 +70,12 @@
                 <!-- Shift Filter -->
                 <div class="flex items-center gap-2">
                     <label class="text-xs text-blue-100 whitespace-nowrap">Shift / 班次:</label>
-                    <div class="flex items-center gap-3 bg-white px-3 py-1 rounded text-sm text-gray-800 shadow-sm">
+                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded text-sm text-gray-800 shadow-sm">
                         <label class="flex items-center gap-1 cursor-pointer font-semibold text-blue-600 hover:bg-gray-100 px-1 rounded transition">
-                            <input type="checkbox" value="Day" class="shift-cb w-4 h-4 accent-blue-600" checked> Day / 白班
+                            <input type="checkbox" value="Day" class="shift-cb w-4 h-4 accent-blue-600" checked> Day
                         </label>
                         <label class="flex items-center gap-1 cursor-pointer font-semibold text-indigo-800 hover:bg-gray-100 px-1 rounded transition">
-                            <input type="checkbox" value="Night" class="shift-cb w-4 h-4 accent-indigo-800" checked> Night / 夜班
+                            <input type="checkbox" value="Night" class="shift-cb w-4 h-4 accent-indigo-800" checked> Night
                         </label>
                     </div>
                 </div>
@@ -62,53 +83,40 @@
                 <!-- Line Filter -->
                 <div class="flex items-center gap-2">
                     <label class="text-xs text-blue-100 whitespace-nowrap">Line / 线:</label>
-                    <div class="flex items-center gap-3 bg-white px-3 py-1 rounded text-sm text-gray-800 shadow-sm">
-                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-blue-700 hover:bg-gray-100 px-1 rounded transition">
-                            <input type="checkbox" value="1#" class="line-cb w-4 h-4 accent-blue-600" checked> 1#
-                        </label>
-                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-green-700 hover:bg-gray-100 px-1 rounded transition">
-                            <input type="checkbox" value="2#" class="line-cb w-4 h-4 accent-green-600" checked> 2#
-                        </label>
-                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-purple-700 hover:bg-gray-100 px-1 rounded transition">
-                            <input type="checkbox" value="3#" class="line-cb w-4 h-4 accent-purple-600" checked> 3#
-                        </label>
-                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-orange-700 hover:bg-gray-100 px-1 rounded transition">
-                            <input type="checkbox" value="4#" class="line-cb w-4 h-4 accent-orange-600" checked> 4#
-                        </label>
-                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-red-700 hover:bg-gray-100 px-1 rounded transition">
-                            <input type="checkbox" value="5#" class="line-cb w-4 h-4 accent-red-600" checked> 5#
-                        </label>
+                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded text-sm text-gray-800 shadow-sm">
+                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-blue-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="1#" class="line-cb w-4 h-4 accent-blue-600" checked> 1#</label>
+                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-green-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="2#" class="line-cb w-4 h-4 accent-green-600" checked> 2#</label>
+                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-purple-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="3#" class="line-cb w-4 h-4 accent-purple-600" checked> 3#</label>
+                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-orange-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="4#" class="line-cb w-4 h-4 accent-orange-600" checked> 4#</label>
+                        <label class="flex items-center gap-1 cursor-pointer font-semibold text-red-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="5#" class="line-cb w-4 h-4 accent-red-600" checked> 5#</label>
                     </div>
                 </div>
                 <button id="applyFilterBtn" class="bg-white text-blue-700 font-bold py-1 px-4 rounded text-sm hover:bg-blue-50 transition shadow">Apply / 应用</button>
             </div>
         </div>
 
-        <!-- Main Dashboard View Area -->
+        <!-- Dashboard Content Area -->
         <div class="flex-1 p-4 relative overflow-hidden flex flex-col">
             <!-- Loading Indicator -->
-            <div id="loadingIndicator" class="absolute inset-0 bg-gray-100 bg-opacity-80 flex flex-col items-center justify-center z-20 hidden">
+            <div id="loadingIndicator" class="absolute inset-0 bg-gray-100 bg-opacity-80 flex flex-col items-center justify-center z-50 hidden">
                 <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div>
                 <p class="mt-2 text-gray-700 font-bold">Loading data... / 加载数据中...</p>
             </div>
 
-            <div id="dashboardView" class="flex-1 flex flex-col gap-4 w-full h-full min-h-0">
-                
-                <!-- 1. Summary Cards (Top Row) -->
+            <!-- ============================== -->
+            <!-- TAB 1: PRODUCTION VIEW         -->
+            <!-- ============================== -->
+            <div id="productionView" class="flex-1 flex flex-col gap-4 w-full h-full min-h-0">
+                <!-- 1. Summary Cards -->
                 <div class="grid grid-cols-3 gap-4 flex-none">
-                    <!-- Plan Card -->
                     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col justify-center text-center shadow-sm">
                         <p class="text-blue-600 text-xs font-bold uppercase tracking-wider mb-1">Total Plan / 总计划</p>
                         <h3 class="text-3xl lg:text-4xl font-bold text-blue-700" id="sumPlan">0</h3>
                     </div>
-                    
-                    <!-- Actual Card -->
                     <div class="bg-green-50 border border-green-200 rounded-xl p-4 flex flex-col justify-center text-center shadow-sm">
                         <p class="text-green-600 text-xs font-bold uppercase tracking-wider mb-1">Total Actual / 实际产量</p>
                         <h3 class="text-3xl lg:text-4xl font-bold text-green-700" id="sumActual">0</h3>
                     </div>
-                    
-                    <!-- Rate Card -->
                     <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col justify-center text-center shadow-sm">
                         <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Achievement Rate / 达成率</p>
                         <h3 class="text-3xl lg:text-4xl font-bold text-purple-600" id="sumRate">0%</h3>
@@ -118,20 +126,18 @@
                     </div>
                 </div>
 
-                <!-- 2. Charts Area (Bottom Row) -->
+                <!-- 2. Charts Area -->
                 <div class="flex-1 grid grid-cols-3 gap-4 min-h-0">
-                    
                     <!-- Daily Chart -->
                     <div class="col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col min-h-0">
                         <div class="flex justify-between items-center mb-2 flex-none">
                             <h2 class="text-lg font-bold text-gray-700" id="chartTitle">Daily Production (By Line) / 每日产量 (按线别)</h2>
                             <div class="flex bg-gray-100 rounded p-1">
-                                <button id="barChartBtn" class="px-3 py-1 rounded bg-white shadow-sm font-semibold text-xs mr-1" onclick="changeChartType('bar')">Bar Chart / 柱状图</button>
-                                <button id="lineChartBtn" class="px-3 py-1 rounded text-gray-500 hover:bg-gray-200 font-semibold text-xs" onclick="changeChartType('line')">Line Chart / 折线图</button>
+                                <button id="barChartBtn" class="px-3 py-1 rounded bg-white shadow-sm font-semibold text-xs mr-1" onclick="changeChartType('bar')">Bar / 柱状</button>
+                                <button id="lineChartBtn" class="px-3 py-1 rounded text-gray-500 hover:bg-gray-200 font-semibold text-xs" onclick="changeChartType('line')">Line / 折线</button>
                             </div>
                         </div>
-                        <!-- Container for multiple charts -->
-                        <div id="chartsContainer" class="relative flex-1 w-full min-h-0 overflow-y-auto pr-2 flex flex-col gap-4">
+                        <div id="chartsContainer" class="relative flex-1 w-full min-h-0 overflow-y-auto pr-2 flex flex-col gap-4 custom-scrollbar">
                             <!-- Charts injected here -->
                         </div>
                     </div>
@@ -143,111 +149,299 @@
                             <canvas id="summaryChart"></canvas>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- ============================== -->
+            <!-- TAB 2: DOWNTIME VIEW           -->
+            <!-- ============================== -->
+            <div id="downtimeView" class="flex-1 flex flex-col gap-4 w-full h-full min-h-0 hidden">
+                <!-- 1. Summary Cards -->
+                <div class="grid grid-cols-3 gap-4 flex-none">
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                        <div class="flex flex-col">
+                            <p class="text-red-500 text-xs font-bold uppercase mb-1">Total Loss Time / 总损失时间</p>
+                            <h3 class="text-3xl lg:text-4xl font-bold text-red-700" id="dtTotalLoss">0 Mins</h3>
+                        </div>
+                        <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center text-red-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                        <div class="flex flex-col w-full overflow-hidden">
+                            <p class="text-amber-600 text-xs font-bold uppercase mb-1">Top Issue Category / 主要问题</p>
+                            <h3 class="text-2xl lg:text-3xl font-bold text-amber-700 truncate w-full" id="dtTopCategory">-</h3>
+                        </div>
+                        <div class="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-500 flex-shrink-0 ml-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                        <div class="flex flex-col w-full overflow-hidden">
+                            <p class="text-gray-500 text-xs font-bold uppercase mb-1">Peak Loss Day / 损失最多的一天</p>
+                            <h3 class="text-2xl lg:text-3xl font-bold text-gray-700 truncate" id="dtPeakDay">-</h3>
+                        </div>
+                        <div class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0 ml-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Charts & Insights -->
+                <div class="flex-1 grid grid-cols-3 gap-4 min-h-0">
+                    
+                    <!-- Category Doughnut Chart -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col min-h-0">
+                        <h3 class="text-center font-bold text-gray-700 text-sm mb-2 flex-none">Loss Time by Category / 分类损失时间</h3>
+                        <div class="relative flex-1 w-full h-full min-h-0 flex items-center justify-center">
+                            <canvas id="dtCategoryChart"></canvas>
+                            <!-- Center Text -->
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-4">
+                                <span class="text-gray-500 text-xs font-semibold">Total Loss</span>
+                                <span class="text-gray-800 text-lg font-bold" id="dtDoughnutCenter">0 mins</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trend Bar Chart -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col min-h-0">
+                        <h3 class="text-center font-bold text-gray-700 text-sm mb-2 flex-none">Loss Time Trend by Date / 每日停机趋势</h3>
+                        <div class="relative flex-1 w-full h-full min-h-0">
+                            <canvas id="dtTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Insights / Summary Text -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
+                        <h3 class="font-bold text-lg text-gray-900 border-b pb-2 mb-3">Loss Time Insights<br><span class="text-sm font-normal text-gray-600">停机损失数据分析</span></h3>
+                        <div id="dtInsightsContent" class="flex flex-col gap-4 text-sm text-gray-800">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
 
                 </div>
             </div>
+
         </div>
     </div>
 
     <script>
-        // --- 1. Google Sheets Config ---
-        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbJ163PgDJVeUZpGSd9fH7_WVSC7hYkGmlX3ZANvgujMZZqE8JamJXmeu4zd4fqJgts16MctXQmtTQ/pub?output=csv"; 
+        // ==========================================
+        // 1. URLs & Configurations
+        // ==========================================
         
-        // --- 2. State Variables ---
-        let rawData = [];
-        let filteredData = [];
+        // URL สำหรับข้อมูลยอดผลิต (Sheet 1)
+        const GOOGLE_SHEET_PROD_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbJ163PgDJVeUZpGSd9fH7_WVSC7hYkGmlX3ZANvgujMZZqE8JamJXmeu4zd4fqJgts16MctXQmtTQ/pub?output=csv"; 
+        
+        // URL สำหรับข้อมูล Downtime (Sheet 2) -> ใช้รหัส 2PACX ร่วมกับ ID Sheet 2 เพื่อแก้ปัญหาโดนบล็อก CORS จากเบราว์เซอร์
+        const GOOGLE_SHEET_DOWNTIME_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbJ163PgDJVeUZpGSd9fH7_WVSC7hYkGmlX3ZANvgujMZZqE8JamJXmeu4zd4fqJgts16MctXQmtTQ/pub?gid=1603492365&single=true&output=csv";
+        
+        const REFRESH_RATE_MS = 60000; // Refresh every 60s
+        
+        // ==========================================
+        // 2. State Variables
+        // ==========================================
+        let rawProdData = [];
+        let filteredProdData = [];
+        
+        let rawDownData = [];
+        let filteredDownData = [];
+        
         let currentSelectedLines = []; 
         let currentSelectedShifts = []; 
+        
+        // Chart Instances
         let productionCharts = {}; 
         let summaryChartInstance = null;
-        let currentChartType = 'bar';
-        const REFRESH_RATE_MS = 60000; // Refresh data every 60 seconds (60000 ms)
+        let dtCategoryChartInstance = null;
+        let dtTrendChartInstance = null;
         
-        // Color scheme for lines
+        let currentChartType = 'bar';
+        let currentMainTab = 'prod'; 
+        
+        // Colors
         const lineColors = {
-            '1#': { plan: 'rgba(59, 130, 246, 0.4)', actual: 'rgba(59, 130, 246, 0.9)', border: 'rgb(37, 99, 235)' }, // Blue
-            '2#': { plan: 'rgba(16, 185, 129, 0.4)', actual: 'rgba(16, 185, 129, 0.9)', border: 'rgb(5, 150, 105)' }, // Green
-            '3#': { plan: 'rgba(168, 85, 247, 0.4)', actual: 'rgba(168, 85, 247, 0.9)', border: 'rgb(147, 51, 234)' }, // Purple
-            '4#': { plan: 'rgba(249, 115, 22, 0.4)',  actual: 'rgba(249, 115, 22, 0.9)',  border: 'rgb(234, 88, 12)' },  // Orange
-            '5#': { plan: 'rgba(239, 68, 68, 0.4)',   actual: 'rgba(239, 68, 68, 0.9)',   border: 'rgb(220, 38, 38)' }   // Red
+            '1#': { plan: 'rgba(59, 130, 246, 0.4)', actual: 'rgba(59, 130, 246, 0.9)', border: 'rgb(37, 99, 235)' },
+            '2#': { plan: 'rgba(16, 185, 129, 0.4)', actual: 'rgba(16, 185, 129, 0.9)', border: 'rgb(5, 150, 105)' },
+            '3#': { plan: 'rgba(168, 85, 247, 0.4)', actual: 'rgba(168, 85, 247, 0.9)', border: 'rgb(147, 51, 234)' },
+            '4#': { plan: 'rgba(249, 115, 22, 0.4)', actual: 'rgba(249, 115, 22, 0.9)', border: 'rgb(234, 88, 12)' },
+            '5#': { plan: 'rgba(239, 68, 68, 0.4)', actual: 'rgba(239, 68, 68, 0.9)', border: 'rgb(220, 38, 38)' }
         };
 
-        // Register Datalabels plugin
+        const categoryColorMap = {
+            'delivery': '#f59e0b', // Amber/Orange
+            'machine': '#ef4444',  // Red
+            'quality': '#3b82f6',  // Blue
+            'equipment': '#8b5cf6',// Purple
+            'material': '#10b981', // Green
+            'system': '#ec4899',   // Pink
+            'other': '#6b7280'     // Gray
+        };
+        const fallbackColors = ['#06b6d4', '#14b8a6', '#f97316', '#8b5cf6', '#6b7280'];
+
         Chart.register(ChartDataLabels);
 
-        // --- 3. Mock Data Generator ---
-        function generateMockData() {
-            const lines = ['1#', '2#', '3#', '4#', '5#'];
-            const shifts = ['Day', 'Night'];
-            const mock = [];
-            
-            for(let i=9; i>=0; i--) {
-                let d = new Date();
-                d.setDate(d.getDate() - i);
-                let dateStr = d.toISOString().split('T')[0];
+        // ==========================================
+        // 3. Data Fetching & Core Logic
+        // ==========================================
+        
+        const fetchCSV = async (url) => {
+            if (!url) return [];
+            try {
+                const response = await fetch(url, { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const csvText = await response.text();
                 
-                lines.forEach(line => {
-                    shifts.forEach(shift => {
-                        let plan = Math.floor(Math.random() * 100) + 400;
-                        let actual = Math.floor(Math.random() * 150) + 350;
-                        mock.push({ Date: dateStr, Line: line, Shift: shift, Plan: plan, Actual: actual });
+                return new Promise((resolve, reject) => {
+                    Papa.parse(csvText, {
+                        header: true, 
+                        dynamicTyping: true, 
+                        skipEmptyLines: true,
+                        complete: res => resolve(res.data),
+                        error: err => reject(err)
                     });
                 });
+            } catch (err) {
+                console.warn(`Failed to fetch CSV from: ${url}`, err);
+                return []; 
             }
-            return mock;
+        };
+
+        // ฟังก์ชันช่วยค้นหาชื่อคอลัมน์แบบยืดหยุ่น (แก้ปัญหาเว้นบรรทัดและ 3 ภาษาได้อย่างแม่นยำ)
+        function getColumnVal(row, keywords) {
+            const keys = Object.keys(row);
+            
+            // 1. ลองหาที่ตรงกันเป๊ะๆ หรือขึ้นต้นด้วยคำนั้นก่อน (เช่น Date\nวันที่)
+            for (let kw of keywords) {
+                let exact = keys.find(k => String(k).toLowerCase().trim() === kw.toLowerCase());
+                if (exact) return row[exact];
+                let starts = keys.find(k => String(k).toLowerCase().trim().startsWith(kw.toLowerCase()));
+                if (starts) return row[starts];
+            }
+            
+            // 2. ถ้าไม่เจอ ให้ค้นหาคำที่ซ่อนอยู่ข้างใน
+            const foundKey = keys.find(k => k && keywords.some(kw => String(k).toLowerCase().includes(kw.toLowerCase())));
+            return foundKey ? row[foundKey] : null;
         }
 
-        // --- 4. Initialization & Auto-Refresh ---
+        // จัดรูปแบบวันที่ให้เป็น YYYY-MM-DD เสมอ
+        function normalizeDate(dateVal) {
+            let isoDate = dateVal;
+            if(dateVal && typeof dateVal === 'string' && dateVal.includes('/')){
+                try { 
+                    let parts = dateVal.split('/');
+                    if (parts.length === 3) {
+                        if(parts[2].length === 4) isoDate = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                    } else {
+                        let d = new Date(dateVal); 
+                        if(!isNaN(d)) isoDate = d.toISOString().split('T')[0];
+                    }
+                } catch(e) {}
+            } else if (dateVal instanceof Date) {
+                isoDate = dateVal.toISOString().split('T')[0];
+            } else if (typeof dateVal === 'string' && dateVal.includes('-')) {
+                isoDate = dateVal.substring(0, 10);
+            }
+            return String(isoDate || '').trim();
+        }
+
+        function normalizeLine(lineVal) {
+            let lineFmt = String(lineVal || '').replace(/Line/i, '').trim();
+            if(lineFmt && !lineFmt.includes('#')) lineFmt = lineFmt + '#';
+            return lineFmt;
+        }
+
+        function normalizeShift(shiftVal) {
+            let shiftFmt = String(shiftVal || '').trim();
+            if(shiftFmt.toLowerCase().includes('day') || shiftFmt.includes('เช้า') || shiftFmt.includes('白班')) shiftFmt = 'Day';
+            if(shiftFmt.toLowerCase().includes('night') || shiftFmt.includes('ดึก') || shiftFmt.includes('夜班')) shiftFmt = 'Night';
+            return shiftFmt;
+        }
+
         async function fetchAndRefreshData(isInitialLoad = false) {
             if (isInitialLoad) {
                 document.getElementById('loadingIndicator').classList.remove('hidden');
-                document.getElementById('dashboardView').classList.add('hidden');
             }
 
-            if (GOOGLE_SHEET_CSV_URL !== "") {
-                // Cache Buster: add current timestamp to URL to bypass browser cache
-                const cacheBusterUrl = GOOGLE_SHEET_CSV_URL + "&_t=" + new Date().getTime();
+            try {
+                const [prodRes, downRes] = await Promise.all([
+                    fetchCSV(GOOGLE_SHEET_PROD_URL),
+                    fetchCSV(GOOGLE_SHEET_DOWNTIME_URL)
+                ]);
                 
-                Papa.parse(cacheBusterUrl, {
-                    download: true,
-                    header: true,
-                    dynamicTyping: true,
-                    complete: function(results) {
-                        rawData = results.data.filter(row => row.Date);
-                        processData(); // This will apply current filters and hide loader
-                    },
-                    error: function(err) {
-                        if (isInitialLoad) {
-                            alert("Cannot fetch data from Google Sheets, using mock data instead. / 无法从Google Sheets获取数据，将使用模拟数据。");
-                            rawData = generateMockData();
-                            processData();
+                // อ่านข้อมูล Production (Sheet 1)
+                if (prodRes && prodRes.length > 0) {
+                    rawProdData = prodRes.map(row => {
+                        return {
+                            Date: normalizeDate(row['Date'] || row['date'] || getColumnVal(row, ['date', 'วันที่'])),
+                            Line: normalizeLine(row['Line'] || row['line'] || getColumnVal(row, ['line', 'ไลน์'])),
+                            Shift: normalizeShift(row['Shift'] || row['shift'] || getColumnVal(row, ['shift', 'กะ'])),
+                            Plan: parseFloat(row['Plan'] || row['plan'] || getColumnVal(row, ['plan', 'เป้า'])) || 0,
+                            Actual: parseFloat(row['Actual'] || row['actual'] || getColumnVal(row, ['actual', 'จริง'])) || 0
+                        };
+                    }).filter(r => r.Date && r.Date.length >= 8 && r.Date !== 'null');
+                } else {
+                    rawProdData = []; 
+                }
+                
+                // อ่านข้อมูล Downtime (Sheet 2) ให้ประกอบ Year, Month, Date เข้าด้วยกัน
+                if (downRes && downRes.length > 0) {
+                    rawDownData = downRes.map(row => {
+                        let yearVal = getColumnVal(row, ['year', 'ปี', '年']);
+                        let monthVal = getColumnVal(row, ['month', 'เดือน', '月']);
+                        let dayVal = getColumnVal(row, ['date', 'วันที่', '日']);
+                        
+                        let isoDate = "";
+                        if (yearVal !== null && yearVal !== undefined && monthVal && dayVal) {
+                            isoDate = `${String(yearVal).trim()}-${String(monthVal).trim().padStart(2, '0')}-${String(dayVal).trim().padStart(2, '0')}`;
+                        } else {
+                            let rawDate = getColumnVal(row, ['date', 'วันที่', '日']);
+                            isoDate = normalizeDate(rawDate);
                         }
-                    }
-                });
-            } else {
-                rawData = generateMockData();
-                processData();
+
+                        let lineVal = getColumnVal(row, ['line', 'ไลน์', '线体']);
+                        let shiftVal = getColumnVal(row, ['shift', 'กะ', '班次']);
+                        let catVal = getColumnVal(row, ['category', 'หมวดหมู่', '类型']);
+                        let durVal = getColumnVal(row, ['loss time', 'เวลาสูญเสีย', '损失时间']);
+                        let probVal = getColumnVal(row, ['problem', 'ปัญหา', '问题清单']);
+                        let deptVal = getColumnVal(row, ['dept', 'แผนก', '部门']);
+                        let repVal = getColumnVal(row, ['repeated', 'ซ้ำ', '重复', 'occurred']);
+
+                        return {
+                            Date: isoDate,
+                            Line: normalizeLine(lineVal),
+                            Shift: normalizeShift(shiftVal),
+                            Category: String(catVal || 'Unknown').trim(),
+                            Duration: parseFloat(durVal) || 0,
+                            Problem: String(probVal || '').trim(),
+                            Dept: String(deptVal || 'Unknown').trim(),
+                            Repeated: String(repVal || '').trim()
+                        };
+                    }).filter(r => r.Date && r.Date.length >= 8 && r.Duration > 0);
+                } else {
+                    rawDownData = []; 
+                }
+
+            } catch (error) {
+                console.error("Error formatting data:", error);
             }
+            
+            processData();
         }
 
         async function init() {
+            // ตั้งค่าวันที่เริ่มต้นเป็นต้นเดือนเมษายน เพื่อให้เห็นข้อมูลในรูป
             const today = new Date();
-            const lastWeek = new Date();
-            lastWeek.setDate(today.getDate() - 6);
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             
             document.getElementById('endDate').value = today.toISOString().split('T')[0];
-            document.getElementById('startDate').value = lastWeek.toISOString().split('T')[0];
+            document.getElementById('startDate').value = startOfMonth.toISOString().split('T')[0];
 
-            // Initial fetch
             await fetchAndRefreshData(true);
-
-            // Set up background auto-refresh interval
-            setInterval(() => {
-                fetchAndRefreshData(false);
-            }, REFRESH_RATE_MS);
+            
+            setInterval(() => fetchAndRefreshData(false), REFRESH_RATE_MS);
         }
 
-        // --- 5. Data Processing & Filtering ---
         function processData() {
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
@@ -258,138 +452,34 @@
             const shiftCheckboxes = document.querySelectorAll('.shift-cb:checked');
             currentSelectedShifts = Array.from(shiftCheckboxes).map(cb => cb.value);
 
-            if (currentSelectedLines.length === 0) {
-                alert("Please select at least 1 production line. / 请至少选择1条生产线。");
-                return;
-            }
-            if (currentSelectedShifts.length === 0) {
-                alert("Please select at least 1 shift (Day/Night). / 请至少选择1个班次 (白班/夜班)。");
-                return;
+            if (currentSelectedLines.length === 0 || currentSelectedShifts.length === 0) {
+                return; 
             }
 
-            // Always ensure dashboard is visible and loader is hidden after processing
             document.getElementById('loadingIndicator').classList.add('hidden');
-            document.getElementById('dashboardView').classList.remove('hidden');
 
-            filteredData = rawData.filter(row => {
-                let matchDate = row.Date >= startDate && row.Date <= endDate;
-                let matchLine = currentSelectedLines.includes(row.Line);
-                let matchShift = currentSelectedShifts.includes(row.Shift); 
-                return matchDate && matchLine && matchShift;
+            filteredProdData = rawProdData.filter(row => {
+                return row.Date >= startDate && row.Date <= endDate &&
+                       currentSelectedLines.includes(row.Line) &&
+                       currentSelectedShifts.includes(row.Shift);
             });
 
-            updateChart();
-            updateSummary();
-        }
-
-        // --- 6. Update Daily Charts ---
-        function updateChart() {
-            const container = document.getElementById('chartsContainer');
-            
-            for (let key in productionCharts) {
-                if(productionCharts[key]) productionCharts[key].destroy();
-            }
-            productionCharts = {};
-            container.innerHTML = ''; 
-
-            const dates = [...new Set(filteredData.map(item => item.Date))].sort();
-
-            currentSelectedLines.forEach(line => {
-                const chartWrapper = document.createElement('div');
-                chartWrapper.className = 'relative w-full flex-1 min-h-[250px] bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col';
-                
-                const title = document.createElement('h3');
-                title.className = 'text-center font-bold text-gray-700 text-sm mb-2 flex-none';
-                title.innerText = `Daily Production - Line / 每日产量 - 线 ${line}`;
-                
-                const canvasWrapper = document.createElement('div');
-                canvasWrapper.className = 'relative flex-1 w-full min-h-0';
-                
-                const canvas = document.createElement('canvas');
-                
-                canvasWrapper.appendChild(canvas);
-                chartWrapper.appendChild(title);
-                chartWrapper.appendChild(canvasWrapper);
-                container.appendChild(chartWrapper);
-
-                const colors = lineColors[line] || lineColors['1#'];
-
-                const linePlans = dates.map(date => {
-                    return filteredData.filter(d => d.Date === date && d.Line === line).reduce((sum, d) => sum + (d.Plan || 0), 0);
-                });
-                
-                const lineActuals = dates.map(date => {
-                    return filteredData.filter(d => d.Date === date && d.Line === line).reduce((sum, d) => sum + (d.Actual || 0), 0);
-                });
-
-                const ctx = canvas.getContext('2d');
-                productionCharts[line] = new Chart(ctx, {
-                    type: currentChartType,
-                    data: {
-                        labels: dates,
-                        datasets: [
-                            {
-                                label: `Plan / 计划`,
-                                data: linePlans,
-                                backgroundColor: colors.plan,
-                                borderColor: colors.border,
-                                borderWidth: 1,
-                                borderDash: [3, 3], 
-                                tension: 0.3,
-                                fill: currentChartType === 'line' ? false : true
-                            },
-                            {
-                                label: `Actual / 实际`,
-                                data: lineActuals,
-                                backgroundColor: colors.actual,
-                                borderColor: colors.border,
-                                borderWidth: 1,
-                                tension: 0.3,
-                                fill: currentChartType === 'line' ? false : true
-                            }
-                        ]
-                    },
-                    options: {
-                        animation: {
-                            duration: 800 // smooth transition on auto-refresh
-                        },
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'top', labels: { boxWidth: 12, font: {size: 11} } },
-                            datalabels: {
-                                color: '#333',
-                                anchor: 'end',
-                                align: 'top',
-                                offset: 2,
-                                rotation: -45, 
-                                font: { weight: 'bold', size: 9 },
-                                formatter: function(value) {
-                                    return value > 0 ? value.toLocaleString() : '';
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: { display: true, text: 'Quantity (pcs) / 数量 (件)' },
-                                grace: '15%'
-                            },
-                            x: {
-                                title: { display: true, text: 'Date / 日期' }
-                            }
-                        }
-                    }
-                });
+            filteredDownData = rawDownData.filter(row => {
+                return row.Date >= startDate && row.Date <= endDate &&
+                       currentSelectedLines.includes(row.Line) &&
+                       currentSelectedShifts.includes(row.Shift);
             });
+
+            updateProductionView();
+            updateDowntimeView();
         }
 
-        // --- 7. Update Summary (Cards & Chart) ---
-        function updateSummary() {
-            let totalPlan = 0;
-            let totalActual = 0;
-
-            filteredData.forEach(row => {
+        // ==========================================
+        // 4. Production View Logic
+        // ==========================================
+        function updateProductionView() {
+            let totalPlan = 0, totalActual = 0;
+            filteredProdData.forEach(row => {
                 totalPlan += (row.Plan || 0);
                 totalActual += (row.Actual || 0);
             });
@@ -403,7 +493,6 @@
             
             const rateBar = document.getElementById('rateProgressBar');
             const rateText = document.getElementById('sumRate');
-            
             rateBar.style.width = Math.min(rateFormatted, 100) + '%';
             
             if(rateFormatted >= 100) {
@@ -417,115 +506,299 @@
                 rateBar.className = "h-2 rounded-full bg-red-500 transition-all duration-500";
             }
 
-            // --- Create Summary Chart ---
-            const summaryLabels = currentSelectedLines.map(line => `Line ${line}`);
-            const summaryPlan = [];
-            const summaryActual = [];
-            const summaryRate = [];
-            const barColorsPlan = [];
-            const barColorsActual = [];
+            const container = document.getElementById('chartsContainer');
+            for (let key in productionCharts) { if(productionCharts[key]) productionCharts[key].destroy(); }
+            productionCharts = {};
+            container.innerHTML = ''; 
 
-            currentSelectedLines.forEach(line => {
-                let p = 0;
-                let a = 0;
-                filteredData.filter(d => d.Line === line).forEach(row => {
-                    p += (row.Plan || 0);
-                    a += (row.Actual || 0);
+            const dates = [...new Set(filteredProdData.map(item => item.Date))].sort();
+            const activeLines = currentSelectedLines.filter(line => filteredProdData.some(d => d.Line === line));
+
+            if (activeLines.length === 0) {
+                container.innerHTML = `<div class="flex items-center justify-center h-full text-gray-500 italic font-semibold">No production data found for the selected lines / 未找到所选线别的生产数据</div>`;
+            } else {
+                activeLines.forEach(line => {
+                    const chartWrapper = document.createElement('div');
+                    chartWrapper.className = 'relative w-full flex-1 min-h-[200px] bg-gray-50 rounded-lg p-2 border border-gray-100 flex flex-col';
+                    const title = document.createElement('h3');
+                    title.className = 'text-center font-bold text-gray-700 text-xs mb-1 flex-none';
+                    title.innerText = `Daily Production - Line / 每日产量 - 线 ${line}`;
+                    const canvasWrapper = document.createElement('div');
+                    canvasWrapper.className = 'relative flex-1 w-full min-h-0';
+                    const canvas = document.createElement('canvas');
+                    
+                    canvasWrapper.appendChild(canvas);
+                    chartWrapper.appendChild(title);
+                    chartWrapper.appendChild(canvasWrapper);
+                    container.appendChild(chartWrapper);
+
+                    const colors = lineColors[line] || lineColors['1#'];
+                    const linePlans = dates.map(date => filteredProdData.filter(d => d.Date === date && d.Line === line).reduce((sum, d) => sum + (d.Plan || 0), 0));
+                    const lineActuals = dates.map(date => filteredProdData.filter(d => d.Date === date && d.Line === line).reduce((sum, d) => sum + (d.Actual || 0), 0));
+
+                    const ctx = canvas.getContext('2d');
+                    productionCharts[line] = new Chart(ctx, {
+                        type: currentChartType,
+                        data: {
+                            labels: dates.map(d => d.substring(5)), 
+                            datasets: [
+                                { label: `Plan / 计划`, data: linePlans, backgroundColor: colors.plan, borderColor: colors.border, borderWidth: 1, borderDash: [3, 3], tension: 0.3, fill: currentChartType === 'line' ? false : true },
+                                { label: `Actual / 实际`, data: lineActuals, backgroundColor: colors.actual, borderColor: colors.border, borderWidth: 1, tension: 0.3, fill: currentChartType === 'line' ? false : true }
+                            ]
+                        },
+                        options: {
+                            animation: { duration: 0 },
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'top', labels: { boxWidth: 10, font: {size: 10} } },
+                                datalabels: { color: '#333', anchor: 'end', align: 'top', offset: 2, font: { weight: 'bold', size: 9 }, formatter: val => val > 0 ? val : '' }
+                            },
+                            scales: { y: { beginAtZero: true, grace: '15%' }, x: { display: true } }
+                        }
+                    });
                 });
-                
-                summaryPlan.push(p);
-                summaryActual.push(a);
-                summaryRate.push(p > 0 ? parseFloat(((a/p)*100).toFixed(1)) : 0);
+            }
 
+            const summaryLabels = activeLines.map(line => `Line ${line}`);
+            const summaryPlan = [], summaryActual = [], summaryRate = [], barColorsPlan = [], barColorsActual = [];
+
+            activeLines.forEach(line => {
+                let p = 0, a = 0;
+                filteredProdData.filter(d => d.Line === line).forEach(row => { p += (row.Plan || 0); a += (row.Actual || 0); });
+                summaryPlan.push(p); summaryActual.push(a);
+                summaryRate.push(p > 0 ? parseFloat(((a/p)*100).toFixed(1)) : 0);
                 const colors = lineColors[line] || lineColors['1#'];
-                barColorsPlan.push(colors.plan);
-                barColorsActual.push(colors.actual);
+                barColorsPlan.push(colors.plan); barColorsActual.push(colors.actual);
             });
 
             const summaryCtx = document.getElementById('summaryChart').getContext('2d');
-            if (summaryChartInstance) {
-                summaryChartInstance.destroy();
-            }
+            if (summaryChartInstance) summaryChartInstance.destroy();
 
-            summaryChartInstance = new Chart(summaryCtx, {
-                type: 'bar',
-                data: {
-                    labels: summaryLabels, 
-                    datasets: [
-                        {
-                            label: 'Total Plan / 总计划',
-                            data: summaryPlan,
-                            backgroundColor: barColorsPlan,
-                            borderColor: barColorsActual,
-                            borderWidth: 1,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: 'Total Actual / 实际产量',
-                            data: summaryActual,
-                            backgroundColor: barColorsActual,
-                            borderColor: barColorsActual,
-                            borderWidth: 1,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: 'Rate / 达成率 (%)',
-                            data: summaryRate,
-                            type: 'line',
-                            backgroundColor: 'rgba(75, 85, 99, 1)', 
-                            borderColor: 'rgba(75, 85, 99, 1)',
-                            borderWidth: 3,
-                            pointRadius: 5,
-                            pointBackgroundColor: '#fff',
-                            yAxisID: 'y1'
-                        }
-                    ]
-                },
-                options: {
-                    animation: {
-                        duration: 800 // smooth transition on auto-refresh
+            if (activeLines.length > 0) {
+                summaryChartInstance = new Chart(summaryCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: summaryLabels, 
+                        datasets: [
+                            { label: 'Total Plan / 总计划', data: summaryPlan, backgroundColor: barColorsPlan, borderColor: barColorsActual, borderWidth: 1, yAxisID: 'y' },
+                            { label: 'Total Actual / 实际', data: summaryActual, backgroundColor: barColorsActual, borderColor: barColorsActual, borderWidth: 1, yAxisID: 'y' },
+                            { label: 'Rate / 达成率 (%)', data: summaryRate, type: 'line', backgroundColor: 'rgba(75, 85, 99, 1)', borderColor: 'rgba(75, 85, 99, 1)', borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#fff', yAxisID: 'y1' }
+                        ]
                     },
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 12, font: {size: 11} } },
-                        datalabels: {
-                            color: '#333',
-                            anchor: 'end',
-                            align: 'top',
-                            offset: 2,
-                            font: { weight: 'bold', size: 11 },
-                            formatter: function(value, context) {
-                                if (context.dataset.type === 'line') return value + '%';
-                                return value > 0 ? value.toLocaleString() : '';
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            type: 'linear', display: true, position: 'left',
-                            title: { display: true, text: 'Quantity (pcs) / 数量 (件)' },
-                            grace: '15%'
+                    options: {
+                        animation: { duration: 0 },
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 10, font: {size: 10} } },
+                            datalabels: { color: '#333', anchor: 'end', align: 'top', offset: 2, font: { weight: 'bold', size: 10 }, formatter: (val, ctx) => ctx.dataset.type === 'line' ? val + '%' : (val > 0 ? val : '') }
                         },
-                        y1: {
-                            type: 'linear', display: true, position: 'right',
-                            title: { display: true, text: 'Achievement Rate / 达成率 (%)' },
-                            grid: { drawOnChartArea: false },
-                            min: 0,
-                            max: Math.max(120, Math.max(...summaryRate) + 20)
+                        scales: {
+                            y: { type: 'linear', position: 'left', grace: '15%' },
+                            y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, min: 0, max: Math.max(120, Math.max(...summaryRate) + 20) }
                         }
                     }
-                }
-            });
+                });
+            }
         }
 
-        // --- 8. Event Listeners & UI Controls ---
-        
+        // ==========================================
+        // 5. Downtime View Logic
+        // ==========================================
+        function updateDowntimeView() {
+            let totalLoss = 0;
+            let categoryTotals = {};
+            let dateTotals = {};
+            let lineTotals = {};
+            let problemDetails = {}; 
+
+            filteredDownData.forEach(row => {
+                let cat = row.Category || 'Other';
+                let dur = parseFloat(row.Duration) || 0;
+                let date = row.Date;
+                let line = row.Line;
+                let prob = row.Problem || 'Unspecified Issue';
+                let dept = row.Dept || 'Unknown';
+
+                totalLoss += dur;
+                categoryTotals[cat] = (categoryTotals[cat] || 0) + dur;
+                dateTotals[date] = (dateTotals[date] || 0) + dur;
+                lineTotals[line] = (lineTotals[line] || 0) + dur;
+
+                if(!problemDetails[cat]) problemDetails[cat] = {};
+                let probKey = `${prob} (${dept})`;
+                problemDetails[cat][probKey] = (problemDetails[cat][probKey] || 0) + dur;
+            });
+
+            document.getElementById('dtTotalLoss').innerText = totalLoss + " Mins";
+            document.getElementById('dtDoughnutCenter').innerText = totalLoss + " mins";
+
+            let topCat = "-", topCatVal = -1;
+            for (let c in categoryTotals) { if (categoryTotals[c] > topCatVal) { topCatVal = categoryTotals[c]; topCat = c; } }
+            
+            let peakDay = "-", peakDayVal = -1;
+            for (let d in dateTotals) { if (dateTotals[d] > peakDayVal) { peakDayVal = dateTotals[d]; peakDay = d; } }
+
+            document.getElementById('dtTopCategory').innerText = topCat;
+            document.getElementById('dtPeakDay').innerText = peakDay !== "-" ? new Date(peakDay).toLocaleDateString('en-GB', {day:'numeric', month:'short'}) : "-";
+
+            const sortedCatsEntries = Object.entries(categoryTotals).sort((a,b) => b[1] - a[1]);
+            const catLabels = sortedCatsEntries.map(e => e[0]);
+            const catData = sortedCatsEntries.map(e => e[1]);
+            
+            const catBgColors = catLabels.map((cat, idx) => {
+                let lowerCat = cat.toLowerCase();
+                return categoryColorMap[lowerCat] || fallbackColors[idx % fallbackColors.length];
+            });
+
+            if (dtCategoryChartInstance) dtCategoryChartInstance.destroy();
+            
+            if (totalLoss > 0) {
+                dtCategoryChartInstance = new Chart(document.getElementById('dtCategoryChart').getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: catLabels,
+                        datasets: [{ data: catData, backgroundColor: catBgColors, borderWidth: 1, borderColor: '#fff' }]
+                    },
+                    options: {
+                        animation: { duration: 0 },
+                        responsive: true, maintainAspectRatio: false,
+                        cutout: '65%',
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 11} } },
+                            datalabels: {
+                                color: '#fff',
+                                font: { weight: 'bold', size: 10 },
+                                formatter: (val) => {
+                                    if (totalLoss === 0) return '';
+                                    let pct = Math.round((val / totalLoss) * 100);
+                                    return pct >= 5 ? pct + '%' : ''; 
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const sortedDates = Object.keys(dateTotals).sort();
+            const trendData = sortedDates.map(d => dateTotals[d]);
+            
+            if (dtTrendChartInstance) dtTrendChartInstance.destroy();
+            
+            if (sortedDates.length > 0) {
+                dtTrendChartInstance = new Chart(document.getElementById('dtTrendChart').getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: sortedDates.map(d => d.substring(5)), 
+                        datasets: [{ label: 'Loss Time (Mins)', data: trendData, backgroundColor: 'rgba(239, 68, 68, 0.8)', borderRadius: 4 }]
+                    },
+                    options: {
+                        animation: { duration: 0 },
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            datalabels: { color: '#ef4444', anchor: 'end', align: 'top', font: { weight: 'bold', size: 10 }, formatter: val => val }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Loss Time (Minutes)' }, grace: '20%' },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            generateInsightsText(totalLoss, sortedCatsEntries, problemDetails, lineTotals, peakDay, peakDayVal, catBgColors);
+        }
+
+        function generateInsightsText(totalLoss, sortedCats, problemDetails, lineTotals, peakDay, peakDayVal, catBgColors) {
+            const container = document.getElementById('dtInsightsContent');
+            if (totalLoss === 0) {
+                container.innerHTML = `<p class="text-gray-500 italic">No downtime recorded in the selected period.<br>选定期间没有记录到停机时间。</p>`;
+                return;
+            }
+
+            let html = '';
+            
+            sortedCats.slice(0, 2).forEach((item, index) => {
+                let cat = item[0];
+                let mins = item[1];
+                let pct = ((mins / totalLoss) * 100).toFixed(1);
+                
+                let problemsDesc = Object.entries(problemDetails[cat]).sort((a,b) => b[1] - a[1]);
+                let topProbText = problemsDesc.length > 0 ? `Notable issues include <b>${problemsDesc[0][0]}</b>` : '';
+                if(problemsDesc.length > 1) topProbText += ` and <b>${problemsDesc[1][0]}</b>`;
+                
+                let colorCode = catBgColors[index];
+
+                html += `
+                <div class="mb-3">
+                    <h4 class="font-bold text-lg" style="color: ${colorCode}">${index+1}. ${cat} Issues (${pct}%)</h4>
+                    <p class="mt-1">
+                        <b>${cat}</b> is a leading cause of downtime (~<b>${mins} mins</b>). ${topProbText}.
+                        <br><span class="text-gray-600"><b>${cat} (类型)</b> 是导致停机的主要原因（约 <b>${mins} 分钟</b>）。值得注意的问题包括: <b>${problemsDesc[0][0]}</b>。</span>
+                    </p>
+                </div>`;
+            });
+
+            let recurringCount = filteredDownData.filter(d => d.Repeated && (d.Repeated.toLowerCase().includes('yes') || d.Repeated.includes('y') || d.Repeated.includes('是'))).length;
+            if(recurringCount > 0) {
+                 html += `
+                <div class="mb-2 bg-red-50 p-3 rounded border border-red-100">
+                    <h4 class="font-bold text-red-800">Recurring Issues / 重复发生的问题</h4>
+                    <p class="mt-1 text-red-700">There are <b>${recurringCount}</b> recurring issues recorded in the selected period.
+                    <br><span class="text-red-600">在此期间记录了 <b>${recurringCount}</b> 个重复发生的异常。</span></p>
+                </div>`;
+            }
+
+            if (peakDay !== "-" && peakDayVal > 0) {
+                let fmtDay = new Date(peakDay).toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+                html += `
+                <div class="mb-2 bg-gray-50 p-3 rounded border border-gray-100">
+                    <h4 class="font-bold text-gray-800">Critical Spike / 异常高峰</h4>
+                    <p class="mt-1">A massive spike occurred on <b>${fmtDay}</b> with <b>${peakDayVal} mins</b> of total loss time.
+                    <br><span class="text-gray-600">在 <b>${fmtDay}</b> 出现了异常高峰，总损失时间高达 <b>${peakDayVal} 分钟</b>。</span></p>
+                </div>`;
+            }
+
+            html += `<h4 class="font-bold text-gray-800 mt-2 border-t pt-2">Loss by Line / 各线别损失分布</h4><ul class="list-disc pl-5 mt-1">`;
+            currentSelectedLines.forEach(line => {
+                let lMins = lineTotals[line] || 0;
+                if (lMins > 0) { 
+                    let lPct = totalLoss > 0 ? ((lMins / totalLoss) * 100).toFixed(1) : 0;
+                    html += `<li><b>Line ${line}:</b> ${lMins} mins (${lPct}%) <span class="text-gray-500 ml-1">| ${line} 线损失 ${lMins} 分钟</span></li>`;
+                }
+            });
+            html += `</ul>`;
+
+            container.innerHTML = html;
+        }
+
+        // ==========================================
+        // 6. UI Controls & Tab Switching
+        // ==========================================
+        function switchMainTab(tabName) {
+            currentMainTab = tabName;
+            const btnProd = document.getElementById('tabBtn-prod');
+            const btnDown = document.getElementById('tabBtn-down');
+            const viewProd = document.getElementById('productionView');
+            const viewDown = document.getElementById('downtimeView');
+
+            if (tabName === 'prod') {
+                btnProd.className = "tab-active px-4 py-1.5 rounded-t-lg font-bold text-sm transition-all duration-200";
+                btnDown.className = "tab-inactive px-4 py-1.5 rounded-t-lg font-bold text-sm transition-all duration-200";
+                viewProd.classList.remove('hidden');
+                viewDown.classList.add('hidden');
+            } else {
+                btnDown.className = "tab-active px-4 py-1.5 rounded-t-lg font-bold text-sm transition-all duration-200";
+                btnProd.className = "tab-inactive px-4 py-1.5 rounded-t-lg font-bold text-sm transition-all duration-200";
+                viewDown.classList.remove('hidden');
+                viewProd.classList.add('hidden');
+            }
+        }
+
         function changeChartType(type) {
             currentChartType = type;
             const barBtn = document.getElementById('barChartBtn');
             const lineBtn = document.getElementById('lineChartBtn');
-            
             if (type === 'bar') {
                 barBtn.className = "px-3 py-1 rounded bg-white shadow-sm font-semibold text-xs mr-1";
                 lineBtn.className = "px-3 py-1 rounded text-gray-500 hover:bg-gray-200 font-semibold text-xs";
@@ -533,11 +806,16 @@
                 lineBtn.className = "px-3 py-1 rounded bg-white shadow-sm font-semibold text-xs";
                 barBtn.className = "px-3 py-1 rounded text-gray-500 hover:bg-gray-200 font-semibold text-xs mr-1";
             }
-            updateChart();
+            updateProductionView(); 
         }
 
-        // Event listeners for manual refresh when filters are changed or button is clicked
-        document.getElementById('applyFilterBtn').addEventListener('click', () => fetchAndRefreshData(true));
+        document.getElementById('applyFilterBtn').addEventListener('click', () => {
+            if(currentSelectedLines.length === 0 || currentSelectedShifts.length === 0){
+                alert("Please select at least 1 Line and 1 Shift. / 请至少选择1条生产线和1个班次。");
+            } else {
+                processData();
+            }
+        });
         
         window.onload = init;
 
