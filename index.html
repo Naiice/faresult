@@ -187,33 +187,54 @@
                     </div>
                 </div>
 
-                <!-- 2. Charts & Insights -->
-                <div class="flex-1 grid grid-cols-3 gap-4 min-h-0">
+                <!-- 2. Charts & Insights Layout (4 Charts + 1 Sidebar) -->
+                <div class="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-hidden">
                     
-                    <!-- Category Doughnut Chart -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col min-h-0">
-                        <h3 class="text-center font-bold text-gray-700 text-sm mb-2 flex-none">Loss Time by Category / 分类损失时间</h3>
-                        <div class="relative flex-1 w-full h-full min-h-0 flex items-center justify-center">
-                            <canvas id="dtCategoryChart"></canvas>
-                            <!-- Center Text -->
-                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-4">
-                                <span class="text-gray-500 text-xs font-semibold">Total Loss</span>
-                                <span class="text-gray-800 text-lg font-bold" id="dtDoughnutCenter">0 mins</span>
+                    <!-- Left Area: 4 Charts -->
+                    <div class="lg:w-3/4 w-full grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto custom-scrollbar pr-2 h-full content-start pb-2">
+                        
+                        <!-- Category Doughnut Chart -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 flex flex-col h-[280px]">
+                            <h3 class="text-center font-bold text-gray-700 text-sm mb-2 flex-none">Loss Time by Category / 分类损失时间</h3>
+                            <div class="relative flex-1 w-full h-full min-h-0 flex items-center justify-center">
+                                <canvas id="dtCategoryChart"></canvas>
+                                <!-- Center Text -->
+                                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-4">
+                                    <span class="text-gray-500 text-xs font-semibold">Total Loss</span>
+                                    <span class="text-gray-800 text-lg font-bold" id="dtDoughnutCenter">0 mins</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Trend Bar Chart -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col min-h-0">
-                        <h3 class="text-center font-bold text-gray-700 text-sm mb-2 flex-none">Loss Time Trend by Date / 每日停机趋势</h3>
-                        <div class="relative flex-1 w-full h-full min-h-0">
-                            <canvas id="dtTrendChart"></canvas>
+                        <!-- Trend Bar Chart -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 flex flex-col h-[280px]">
+                            <h3 class="text-center font-bold text-gray-700 text-sm mb-2 flex-none">Loss Time Trend by Date / 每日停机趋势</h3>
+                            <div class="relative flex-1 w-full h-full min-h-0">
+                                <canvas id="dtTrendChart"></canvas>
+                            </div>
                         </div>
+
+                        <!-- NEW: Dept Bar Chart -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 flex flex-col h-[280px]">
+                            <h3 class="text-center font-bold text-gray-700 text-sm mb-2 flex-none">Loss Time by Dept / 部门停机损失</h3>
+                            <div class="relative flex-1 w-full h-full min-h-0">
+                                <canvas id="dtDeptChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- NEW: Category Ratio by Line (Stacked Bar) -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 flex flex-col h-[280px]">
+                            <h3 class="text-center font-bold text-gray-700 text-sm mb-2 flex-none">Category Ratio by Line / 各线别问题占比</h3>
+                            <div class="relative flex-1 w-full h-full min-h-0">
+                                <canvas id="dtLineCatChart"></canvas>
+                            </div>
+                        </div>
+
                     </div>
 
-                    <!-- Insights / Summary Text -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
-                        <h3 class="font-bold text-lg text-gray-900 border-b pb-2 mb-3">Loss Time Insights<br><span class="text-sm font-normal text-gray-600">停机损失数据分析</span></h3>
+                    <!-- Right Area: Insights / Summary Text -->
+                    <div class="lg:w-1/4 w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col min-h-[300px] h-full overflow-y-auto custom-scrollbar">
+                        <h3 class="font-bold text-lg text-gray-900 border-b pb-2 mb-3 flex-none">Loss Time Insights<br><span class="text-sm font-normal text-gray-600">停机损失数据分析</span></h3>
                         <div id="dtInsightsContent" class="flex flex-col gap-4 text-sm text-gray-800">
                             <!-- Injected by JS -->
                         </div>
@@ -233,7 +254,7 @@
         // URL สำหรับข้อมูลยอดผลิต (Sheet 1)
         const GOOGLE_SHEET_PROD_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbJ163PgDJVeUZpGSd9fH7_WVSC7hYkGmlX3ZANvgujMZZqE8JamJXmeu4zd4fqJgts16MctXQmtTQ/pub?output=csv"; 
         
-        // URL สำหรับข้อมูล Downtime (Sheet 2) -> ใช้รหัส 2PACX ร่วมกับ ID Sheet 2 เพื่อแก้ปัญหาโดนบล็อก CORS จากเบราว์เซอร์
+        // URL สำหรับข้อมูล Downtime (Sheet 2)
         const GOOGLE_SHEET_DOWNTIME_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbJ163PgDJVeUZpGSd9fH7_WVSC7hYkGmlX3ZANvgujMZZqE8JamJXmeu4zd4fqJgts16MctXQmtTQ/pub?gid=1603492365&single=true&output=csv";
         
         const REFRESH_RATE_MS = 60000; // Refresh every 60s
@@ -255,6 +276,8 @@
         let summaryChartInstance = null;
         let dtCategoryChartInstance = null;
         let dtTrendChartInstance = null;
+        let dtDeptChartInstance = null;
+        let dtLineCatChartInstance = null;
         
         let currentChartType = 'bar';
         let currentMainTab = 'prod'; 
@@ -278,6 +301,20 @@
             'other': '#6b7280'     // Gray
         };
         const fallbackColors = ['#06b6d4', '#14b8a6', '#f97316', '#8b5cf6', '#6b7280'];
+        
+        let dynamicCategoryColors = {};
+        let fallbackIndex = 0;
+
+        // ฟังก์ชันช่วยดึงสีให้เหมือนกันในทุกๆ กราฟ
+        function getCategoryColor(cat) {
+            let lowerCat = String(cat).toLowerCase();
+            if (categoryColorMap[lowerCat]) return categoryColorMap[lowerCat];
+            if (!dynamicCategoryColors[lowerCat]) {
+                dynamicCategoryColors[lowerCat] = fallbackColors[fallbackIndex % fallbackColors.length];
+                fallbackIndex++;
+            }
+            return dynamicCategoryColors[lowerCat];
+        }
 
         Chart.register(ChartDataLabels);
 
@@ -307,24 +344,19 @@
             }
         };
 
-        // ฟังก์ชันช่วยค้นหาชื่อคอลัมน์แบบยืดหยุ่น (แก้ปัญหาเว้นบรรทัดและ 3 ภาษาได้อย่างแม่นยำ)
+        // ฟังก์ชันช่วยค้นหาชื่อคอลัมน์แบบยืดหยุ่น 
         function getColumnVal(row, keywords) {
             const keys = Object.keys(row);
-            
-            // 1. ลองหาที่ตรงกันเป๊ะๆ หรือขึ้นต้นด้วยคำนั้นก่อน (เช่น Date\nวันที่)
             for (let kw of keywords) {
                 let exact = keys.find(k => String(k).toLowerCase().trim() === kw.toLowerCase());
                 if (exact) return row[exact];
                 let starts = keys.find(k => String(k).toLowerCase().trim().startsWith(kw.toLowerCase()));
                 if (starts) return row[starts];
             }
-            
-            // 2. ถ้าไม่เจอ ให้ค้นหาคำที่ซ่อนอยู่ข้างใน
             const foundKey = keys.find(k => k && keywords.some(kw => String(k).toLowerCase().includes(kw.toLowerCase())));
             return foundKey ? row[foundKey] : null;
         }
 
-        // จัดรูปแบบวันที่ให้เป็น YYYY-MM-DD เสมอ
         function normalizeDate(dateVal) {
             let isoDate = dateVal;
             if(dateVal && typeof dateVal === 'string' && dateVal.includes('/')){
@@ -369,7 +401,7 @@
                     fetchCSV(GOOGLE_SHEET_DOWNTIME_URL)
                 ]);
                 
-                // อ่านข้อมูล Production (Sheet 1)
+                // อ่านข้อมูล Production
                 if (prodRes && prodRes.length > 0) {
                     rawProdData = prodRes.map(row => {
                         return {
@@ -384,7 +416,7 @@
                     rawProdData = []; 
                 }
                 
-                // อ่านข้อมูล Downtime (Sheet 2) ให้ประกอบ Year, Month, Date เข้าด้วยกัน
+                // อ่านข้อมูล Downtime
                 if (downRes && downRes.length > 0) {
                     rawDownData = downRes.map(row => {
                         let yearVal = getColumnVal(row, ['year', 'ปี', '年']);
@@ -430,7 +462,6 @@
         }
 
         async function init() {
-            // ตั้งค่าวันที่เริ่มต้นเป็นต้นเดือนเมษายน เพื่อให้เห็นข้อมูลในรูป
             const today = new Date();
             const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             
@@ -605,10 +636,16 @@
         // 5. Downtime View Logic
         // ==========================================
         function updateDowntimeView() {
+            if (dtCategoryChartInstance) dtCategoryChartInstance.destroy();
+            if (dtTrendChartInstance) dtTrendChartInstance.destroy();
+            if (dtDeptChartInstance) dtDeptChartInstance.destroy();
+            if (dtLineCatChartInstance) dtLineCatChartInstance.destroy();
+
             let totalLoss = 0;
             let categoryTotals = {};
             let dateTotals = {};
             let lineTotals = {};
+            let deptTotals = {};
             let problemDetails = {}; 
 
             filteredDownData.forEach(row => {
@@ -623,12 +660,14 @@
                 categoryTotals[cat] = (categoryTotals[cat] || 0) + dur;
                 dateTotals[date] = (dateTotals[date] || 0) + dur;
                 lineTotals[line] = (lineTotals[line] || 0) + dur;
+                deptTotals[dept] = (deptTotals[dept] || 0) + dur;
 
                 if(!problemDetails[cat]) problemDetails[cat] = {};
                 let probKey = `${prob} (${dept})`;
                 problemDetails[cat][probKey] = (problemDetails[cat][probKey] || 0) + dur;
             });
 
+            // Update Summary Cards
             document.getElementById('dtTotalLoss').innerText = totalLoss + " Mins";
             document.getElementById('dtDoughnutCenter').innerText = totalLoss + " mins";
 
@@ -641,48 +680,44 @@
             document.getElementById('dtTopCategory').innerText = topCat;
             document.getElementById('dtPeakDay').innerText = peakDay !== "-" ? new Date(peakDay).toLocaleDateString('en-GB', {day:'numeric', month:'short'}) : "-";
 
+            if (totalLoss === 0) {
+                generateInsightsText(totalLoss, [], problemDetails, lineTotals, peakDay, peakDayVal);
+                return; 
+            }
+
+            // 1. Category Doughnut Chart
             const sortedCatsEntries = Object.entries(categoryTotals).sort((a,b) => b[1] - a[1]);
             const catLabels = sortedCatsEntries.map(e => e[0]);
             const catData = sortedCatsEntries.map(e => e[1]);
-            
-            const catBgColors = catLabels.map((cat, idx) => {
-                let lowerCat = cat.toLowerCase();
-                return categoryColorMap[lowerCat] || fallbackColors[idx % fallbackColors.length];
-            });
+            const catBgColors = catLabels.map(cat => getCategoryColor(cat));
 
-            if (dtCategoryChartInstance) dtCategoryChartInstance.destroy();
-            
-            if (totalLoss > 0) {
-                dtCategoryChartInstance = new Chart(document.getElementById('dtCategoryChart').getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: catLabels,
-                        datasets: [{ data: catData, backgroundColor: catBgColors, borderWidth: 1, borderColor: '#fff' }]
-                    },
-                    options: {
-                        animation: { duration: 0 },
-                        responsive: true, maintainAspectRatio: false,
-                        cutout: '65%',
-                        plugins: {
-                            legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 11} } },
-                            datalabels: {
-                                color: '#fff',
-                                font: { weight: 'bold', size: 10 },
-                                formatter: (val) => {
-                                    if (totalLoss === 0) return '';
-                                    let pct = Math.round((val / totalLoss) * 100);
-                                    return pct >= 5 ? pct + '%' : ''; 
-                                }
+            dtCategoryChartInstance = new Chart(document.getElementById('dtCategoryChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: catLabels,
+                    datasets: [{ data: catData, backgroundColor: catBgColors, borderWidth: 1, borderColor: '#fff' }]
+                },
+                options: {
+                    animation: { duration: 0 },
+                    responsive: true, maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 11} } },
+                        datalabels: {
+                            color: '#fff',
+                            font: { weight: 'bold', size: 10 },
+                            formatter: (val) => {
+                                let pct = Math.round((val / totalLoss) * 100);
+                                return pct >= 5 ? pct + '%' : ''; 
                             }
                         }
                     }
-                });
-            }
+                }
+            });
 
+            // 2. Trend Bar Chart
             const sortedDates = Object.keys(dateTotals).sort();
             const trendData = sortedDates.map(d => dateTotals[d]);
-            
-            if (dtTrendChartInstance) dtTrendChartInstance.destroy();
             
             if (sortedDates.length > 0) {
                 dtTrendChartInstance = new Chart(document.getElementById('dtTrendChart').getContext('2d'), {
@@ -706,10 +741,87 @@
                 });
             }
 
-            generateInsightsText(totalLoss, sortedCatsEntries, problemDetails, lineTotals, peakDay, peakDayVal, catBgColors);
+            // 3. Department Bar Chart (New)
+            const sortedDeptEntries = Object.entries(deptTotals).sort((a,b) => b[1] - a[1]);
+            const deptLabels = sortedDeptEntries.map(e => e[0]);
+            const deptData = sortedDeptEntries.map(e => e[1]);
+
+            if (deptLabels.length > 0) {
+                dtDeptChartInstance = new Chart(document.getElementById('dtDeptChart').getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: deptLabels,
+                        datasets: [{ label: 'Loss Time (Mins)', data: deptData, backgroundColor: '#6366f1', borderRadius: 4 }]
+                    },
+                    options: {
+                        animation: { duration: 0 },
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            datalabels: { color: '#4f46e5', anchor: 'end', align: 'top', font: { weight: 'bold', size: 10 }, formatter: val => val }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Mins' }, grace: '20%' },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // 4. Category Ratio by Line (Stacked Bar Chart - New)
+            const activeLinesList = [...new Set(filteredDownData.map(r => r.Line))].sort();
+            
+            if (activeLinesList.length > 0) {
+                const stackedDatasets = catLabels.map(cat => {
+                    let dataArray = activeLinesList.map(line => {
+                        return filteredDownData
+                            .filter(r => r.Line === line && r.Category === cat)
+                            .reduce((sum, r) => sum + (parseFloat(r.Duration) || 0), 0);
+                    });
+                    return {
+                        label: cat,
+                        data: dataArray,
+                        backgroundColor: getCategoryColor(cat),
+                        borderWidth: 0
+                    };
+                });
+
+                dtLineCatChartInstance = new Chart(document.getElementById('dtLineCatChart').getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: activeLinesList.map(l => `Line ${l}`),
+                        datasets: stackedDatasets
+                    },
+                    options: {
+                        animation: { duration: 0 },
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 10} } },
+                            datalabels: {
+                                color: '#fff',
+                                font: { weight: 'bold', size: 9 },
+                                formatter: (val, ctx) => {
+                                    if (val === 0) return '';
+                                    let lineName = activeLinesList[ctx.dataIndex];
+                                    let lineTotal = lineTotals[lineName];
+                                    let pct = Math.round((val / lineTotal) * 100);
+                                    return pct >= 10 ? pct + '%' : ''; // โชว์เฉพาะ 10% ขึ้นไป กันตัวเลขทับกัน
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { stacked: true, grid: { display: false } },
+                            y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Mins' } }
+                        }
+                    }
+                });
+            }
+
+            // Generate Insights Text
+            generateInsightsText(totalLoss, sortedCatsEntries, problemDetails, lineTotals, peakDay, peakDayVal);
         }
 
-        function generateInsightsText(totalLoss, sortedCats, problemDetails, lineTotals, peakDay, peakDayVal, catBgColors) {
+        function generateInsightsText(totalLoss, sortedCats, problemDetails, lineTotals, peakDay, peakDayVal) {
             const container = document.getElementById('dtInsightsContent');
             if (totalLoss === 0) {
                 container.innerHTML = `<p class="text-gray-500 italic">No downtime recorded in the selected period.<br>选定期间没有记录到停机时间。</p>`;
@@ -727,7 +839,7 @@
                 let topProbText = problemsDesc.length > 0 ? `Notable issues include <b>${problemsDesc[0][0]}</b>` : '';
                 if(problemsDesc.length > 1) topProbText += ` and <b>${problemsDesc[1][0]}</b>`;
                 
-                let colorCode = catBgColors[index];
+                let colorCode = getCategoryColor(cat);
 
                 html += `
                 <div class="mb-3">
