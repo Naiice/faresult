@@ -92,6 +92,10 @@
                     </div>
                 </div>
                 <button id="applyFilterBtn" class="bg-white text-blue-700 font-bold py-0.5 px-3 rounded text-[11px] md:text-xs hover:bg-blue-50 transition shadow">Apply</button>
+                <button onclick="exportDataToCSV()" class="bg-green-500 text-white font-bold py-0.5 px-3 rounded text-[11px] md:text-xs hover:bg-green-400 transition shadow flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-3.5 md:w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Export
+                </button>
             </div>
         </div>
 
@@ -930,6 +934,62 @@
                 processData();
             }
         });
+
+        // ==========================================
+        // 7. Export CSV Function
+        // ==========================================
+        function exportDataToCSV() {
+            let dataToExport = [];
+            let prefix = '';
+            
+            // ตรวจสอบว่ากำลังอยู่หน้าแท็บไหน เพื่อโหลดข้อมูลหน้านั้น
+            if (currentMainTab === 'prod') {
+                dataToExport = filteredProdData.map(row => ({
+                    Date: row.Date,
+                    Line: row.Line,
+                    Shift: row.Shift,
+                    Plan: row.Plan,
+                    Actual: row.Actual
+                }));
+                prefix = 'Production_Data';
+            } else {
+                dataToExport = filteredDownData.map(row => ({
+                    Date: row.Date,
+                    Line: row.Line,
+                    Shift: row.Shift,
+                    Category: row.Category,
+                    Duration_Mins: row.Duration,
+                    Department: row.Dept,
+                    Problem_Detail: row.Problem,
+                    Is_Repeated: row.Repeated
+                }));
+                prefix = 'Downtime_Data';
+            }
+
+            if (dataToExport.length === 0) {
+                alert('No data to export for the selected filters. / 没有可导出的数据。');
+                return;
+            }
+
+            // ใช้ PapaParse แปลง JSON เป็น CSV
+            const csvContent = Papa.unparse(dataToExport);
+            
+            // เติม BOM (\uFEFF) เข้าไปด้านหน้า เพื่อให้ Excel อ่านภาษาไทย/จีน ออก
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", `${prefix}_${startDate}_to_${endDate}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
         
         window.onload = init;
 
